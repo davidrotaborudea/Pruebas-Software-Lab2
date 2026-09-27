@@ -27,14 +27,6 @@ fi
 USERNAME="${USERNAME:-john}"
 PASSWORD="${PASSWORD:-demo}"
 
-if [[ -n "${TEST_COOLDOWN_SECONDS:-}" ]]; then
-  COOLDOWN_SECONDS="${TEST_COOLDOWN_SECONDS}"
-elif [[ "${PROFILE}" == "full" ]]; then
-  COOLDOWN_SECONDS=90
-else
-  COOLDOWN_SECONDS=0
-fi
-
 COMMON_ARGS=(
   "-Dprofile=${PROFILE}"
   "-DbaseUrl=${BASE_URL}"
@@ -54,11 +46,8 @@ SIMULATIONS=(
 )
 
 FAIL=0
-LAST_INDEX=$((${#SIMULATIONS[@]} - 1))
 
-for INDEX in "${!SIMULATIONS[@]}"; do
-  SIMULATION="${SIMULATIONS[$INDEX]}"
-
+for SIMULATION in "${SIMULATIONS[@]}"; do
   echo
   echo "============================================================"
   echo "Running ${SIMULATION} with profile=${PROFILE}"
@@ -70,13 +59,7 @@ for INDEX in "${!SIMULATIONS[@]}"; do
     "${COMMON_ARGS[@]}"; then
     FAIL=1
     echo
-    echo "Simulation failed. The suite will continue so its report is preserved."
-  fi
-
-  if [[ "${INDEX}" -lt "${LAST_INDEX}" && "${COOLDOWN_SECONDS}" -gt 0 ]]; then
-    echo
-    echo "Waiting ${COOLDOWN_SECONDS}s before the next simulation..."
-    sleep "${COOLDOWN_SECONDS}"
+    echo "Simulation failed. Continuing with the remaining simulations."
   fi
 done
 

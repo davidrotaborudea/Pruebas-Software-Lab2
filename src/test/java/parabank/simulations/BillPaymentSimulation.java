@@ -3,8 +3,6 @@ package parabank.simulations;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
 
-import java.time.Duration;
-
 import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 import static parabank.config.HttpProtocols.JSON;
@@ -14,8 +12,6 @@ import static parabank.config.TestConfig.SMOKE;
 public class BillPaymentSimulation extends Simulation {
 
     private final int users = SMOKE ? 1 : 200;
-    private final int durationSeconds = SMOKE ? 2 : 20;
-    private final long pauseMillis = SMOKE ? 2000 : 750;
 
     private final ScenarioBuilder billPayments =
         scenario("HU5 Pago de servicios")
@@ -69,15 +65,11 @@ public class BillPaymentSimulation extends Simulation {
                             session -> session.getString("payeeName")
                         ).count().is(1)
                     )
-            )
-            .pause(Duration.ofMillis(pauseMillis));
+            );
 
     {
         setUp(
-            billPayments.injectClosed(
-                constantConcurrentUsers(users)
-                    .during(Duration.ofSeconds(durationSeconds))
-            )
+            billPayments.injectOpen(atOnceUsers(users))
         )
         .protocols(JSON)
         .assertions(

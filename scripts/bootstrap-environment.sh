@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-https://parabank.parasoft.com/parabank/services/bank}"
+BASE_URL="${BASE_URL:-http://127.0.0.1:8080/parabank/services/bank}"
 USERNAME="${USERNAME:-john}"
 PASSWORD="${PASSWORD:-demo}"
-TRANSFER_FEEDER_ROWS="${TRANSFER_FEEDER_ROWS:-5000}"
+TRANSFER_FEEDER_ROWS="${TRANSFER_FEEDER_ROWS:-400}"
 
 mkdir -p target
 

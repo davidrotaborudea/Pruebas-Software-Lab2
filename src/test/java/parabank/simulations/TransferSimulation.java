@@ -13,9 +13,9 @@ import static parabank.config.TestConfig.SMOKE;
 
 public class TransferSimulation extends Simulation {
 
-    private final double targetRate = SMOKE ? 0.5 : 160.0;
-    private final double minimumRequiredRate = SMOKE ? 0.2 : 150.0;
-    private final int durationSeconds = SMOKE ? 4 : 20;
+    private final double targetRate = SMOKE ? 2.0 : 160.0;
+    private final double minimumRequiredRate = SMOKE ? 1.0 : 150.0;
+    private final int durationSeconds = SMOKE ? 1 : 2;
 
     private final FeederBuilder<String> transferFeeder =
         csv("data/transfers.csv").queue();

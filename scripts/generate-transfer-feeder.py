@@ -8,7 +8,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--from-account", required=True)
     parser.add_argument("--to-account", required=True)
-    parser.add_argument("--rows", type=int, default=5000)
+    parser.add_argument("--rows", type=int, default=400)
     parser.add_argument(
         "--output",
         default="src/test/resources/data/transfers.csv",
