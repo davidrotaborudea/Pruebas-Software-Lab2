@@ -2,7 +2,7 @@ package parabank.config;
 
 public final class TestConfig {
     public static final String DEFAULT_BASE_URL =
-        "http://127.0.0.1:8080/parabank/services/bank";
+        "https://parabank.parasoft.com/parabank/services/bank";
 
     public static final String BASE_URL =
         System.getProperty("baseUrl", DEFAULT_BASE_URL);

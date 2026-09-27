@@ -33,7 +33,7 @@ jobs:
         shell: bash
         run: |
           chmod +x scripts/*.sh
-          ./scripts/run-production.sh full
+          ./scripts/run-production.sh full all
 
       - name: Upload performance reports
         if: always()
