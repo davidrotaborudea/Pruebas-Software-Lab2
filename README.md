@@ -16,46 +16,64 @@ implementadas con Gatling Java DSL y ejecutadas en GitHub Actions.
 ## GitHub Actions
 
 `.github/workflows/performance-tests.yml` ejecuta exclusivamente el perfil
-`full`.
+`full`. No usa Docker y no inicia una instancia local de ParaBank.
 
 El runner:
 
 1. Descarga este proyecto.
 2. Configura Java 21.
-3. Clona el repositorio oficial de ParaBank.
-4. Compila ParaBank y construye su imagen Docker.
-5. Inicia ParaBank en `localhost:8080`.
-6. Obtiene dinámicamente el cliente y dos cuentas de `john/demo`.
-7. Genera 5000 filas para el feeder CSV de transferencias.
-8. Compila las simulaciones Gatling.
-9. Ejecuta las cinco simulaciones con `profile=full`.
-10. Publica los reportes Gatling y el log de ParaBank como artifacts.
+3. Valida la URL del entorno de rendimiento autorizado.
+4. Obtiene dinámicamente el cliente y dos cuentas del usuario de prueba.
+5. Genera 5000 filas para el feeder CSV de transferencias.
+6. Compila las simulaciones Gatling.
+7. Ejecuta las cinco simulaciones con `profile=full`.
+8. Publica los reportes Gatling como artifacts.
 
-Las cargas completas se ejecutan contra la instancia local del runner. El
-proyecto bloquea intencionalmente `full` contra el host público compartido de
-ParaBank.
+## Configuración de GitHub
+
+En el repositorio abre:
+
+`Settings > Secrets and variables > Actions > New repository secret`
+
+Configura:
+
+```text
+PERF_BASE_URL=https://tu-entorno-autorizado/parabank/services/bank
+PERF_USERNAME=john
+PERF_PASSWORD=demo
+```
+
+`PERF_BASE_URL` es obligatorio. `PERF_USERNAME` y `PERF_PASSWORD` pueden
+omitirse si el entorno usa `john/demo`, porque los scripts conservan esos
+valores como predeterminados.
+
+El perfil `full` se rechaza intencionalmente contra
+`parabank.parasoft.com`, ya que es un host público compartido y no debe recibir
+una prueba de estrés desde CI sin autorización explícita del operador.
 
 ## Requisitos locales
 
 - Java 21
 - Maven
 - Python 3
-- Git
-- Docker
 - curl
+
+Docker no es necesario.
 
 ## Ejecutar la suite completa localmente
 
-Primero inicia ParaBank:
+Configura un entorno autorizado:
+
+```bash
+export BASE_URL="https://tu-entorno-autorizado/parabank/services/bank"
+export USERNAME="john"
+export PASSWORD="demo"
+```
+
+Prepara los datos:
 
 ```bash
 chmod +x scripts/*.sh
-./scripts/start-parabank-local.sh
-```
-
-Prepara los IDs y el feeder:
-
-```bash
 ./scripts/bootstrap-environment.sh
 ```
 
@@ -63,12 +81,6 @@ Ejecuta las cinco pruebas completas:
 
 ```bash
 ./scripts/run-all.sh full
-```
-
-Al terminar:
-
-```bash
-./scripts/stop-parabank-local.sh
 ```
 
 Los reportes quedan en:
@@ -105,21 +117,6 @@ Puedes cambiar la cantidad antes del bootstrap:
 export TRANSFER_FEEDER_ROWS=6000
 ./scripts/bootstrap-environment.sh
 ```
-
-## Ejecutar contra otro entorno autorizado
-
-No necesitas iniciar Docker si ya tienes un ParaBank propio o autorizado:
-
-```bash
-export BASE_URL="https://mi-entorno/parabank/services/bank"
-export USERNAME="john"
-export PASSWORD="demo"
-./scripts/bootstrap-environment.sh
-./scripts/run-all.sh full
-```
-
-El perfil `full` se rechaza si `BASE_URL` apunta al host público compartido
-`parabank.parasoft.com`.
 
 ## Validación del proyecto
 

@@ -15,9 +15,9 @@ jobs:
     timeout-minutes: 45
 
     env:
-      BASE_URL: http://localhost:8080/parabank/services/bank
-      USERNAME: john
-      PASSWORD: demo
+      BASE_URL: ${{ secrets.PERF_BASE_URL }}
+      USERNAME: ${{ secrets.PERF_USERNAME }}
+      PASSWORD: ${{ secrets.PERF_PASSWORD }}
       TRANSFER_FEEDER_ROWS: '5000'
 
     steps:
@@ -31,12 +31,27 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Start local ParaBank
+      - name: Validate performance environment
+        shell: bash
         run: |
-          chmod +x scripts/start-parabank-local.sh
-          ./scripts/start-parabank-local.sh
+          set -euo pipefail
+
+          if [[ -z "${BASE_URL}" ]]; then
+            echo "PERF_BASE_URL is not configured in GitHub Actions secrets."
+            echo "Configure the authorized performance environment URL first."
+            exit 2
+          fi
+
+          if [[ "${BASE_URL}" == *"parabank.parasoft.com"* ]]; then
+            echo "Full load tests are blocked against the shared public ParaBank host."
+            echo "Use an environment you own or are authorized to load test."
+            exit 2
+          fi
+
+          echo "Performance target configured."
 
       - name: Prepare test data
+        shell: bash
         run: |
           chmod +x scripts/bootstrap-environment.sh
           ./scripts/bootstrap-environment.sh
@@ -45,26 +60,15 @@ jobs:
         run: mvn --batch-mode test-compile
 
       - name: Run full performance suite
+        shell: bash
         run: |
           chmod +x scripts/run-all.sh
           ./scripts/run-all.sh full
-
-      - name: Capture ParaBank logs
-        if: always()
-        run: docker logs parabank-performance-test > target/parabank.log 2>&1 || true
 
       - name: Upload Gatling reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gatling-full-reports
-          path: |
-            target/gatling/**
-            target/parabank.log
+          path: target/gatling/**
           if-no-files-found: warn
-
-      - name: Stop local ParaBank
-        if: always()
-        run: |
-          chmod +x scripts/stop-parabank-local.sh
-          ./scripts/stop-parabank-local.sh
