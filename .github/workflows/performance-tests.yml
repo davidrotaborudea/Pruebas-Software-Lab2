@@ -16,7 +16,7 @@ jobs:
       USERNAME: john
       PASSWORD: demo
       TRANSFER_FEEDER_ROWS: '200'
-      TEST_COOLDOWN_SECONDS: '300'
+      TEST_COOLDOWN_SECONDS: '0'
 
     steps:
       - name: Checkout

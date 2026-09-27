@@ -1,40 +1,28 @@
 # ParaBank Gatling Performance Tests
 
-Proyecto mínimo para ejecutar las cinco historias de rendimiento contra ParaBank
-producción, tanto desde GitHub Actions como desde un equipo local.
+Proyecto Gatling para ejecutar las cinco historias no funcionales contra la
+instancia publica de ParaBank.
 
 No usa Docker.
 
-## Producción
-
-URL por defecto:
-
-```text
-https://parabank.parasoft.com/parabank/services/bank
-```
-
-## Requisitos locales
+## Requisitos
 
 - Java 21
 - Maven
 - Python 3
 - curl
 
-## Ejecutar toda la suite
+## Suite completa
 
 ```bash
-cd /Users/davidrodriguez/Downloads/parabank-gatling-performance
 chmod +x scripts/*.sh
 ./scripts/run-production.sh full all
 ```
 
-En perfil `full` se esperan 300 segundos entre historias. Para quitar la espera:
+El perfil `full` espera 300 segundos entre historias cuando se ejecuta la suite
+completa. Una prueba individual no tiene cooldown.
 
-```bash
-TEST_COOLDOWN_SECONDS=0 ./scripts/run-production.sh full all
-```
-
-## Ejecutar una historia individual
+## Ejecutar una sola historia
 
 ```bash
 ./scripts/run-production.sh full login
@@ -44,26 +32,67 @@ TEST_COOLDOWN_SECONDS=0 ./scripts/run-production.sh full all
 ./scripts/run-production.sh full bill
 ```
 
-También se aceptan los alias `hu1`, `hu2`, `hu3`, `hu4` y `hu5`.
+Tambien se aceptan `hu1`, `hu2`, `hu3`, `hu4` y `hu5`.
 
-Al ejecutar una sola historia no hay espera adicional porque no existe una
-siguiente HU.
+El login individual no necesita bootstrap de cuentas. Las otras historias
+obtienen automaticamente el customer y las cuentas necesarias.
 
 ## Smoke
 
-Toda la suite:
-
 ```bash
 ./scripts/run-production.sh smoke all
-```
-
-Individual:
-
-```bash
 ./scripts/run-production.sh smoke login
 ```
 
-El perfil `smoke` no tiene cooldown por defecto.
+## Bootstrap y reintentos
+
+ParaBank es un sitio demo y puede responder temporalmente con `429` o `5xx`.
+El bootstrap reintenta esos errores antes de iniciar una prueba que necesite
+IDs de customer/cuentas.
+
+Valores por defecto:
+
+```text
+BOOTSTRAP_RETRIES=12
+BOOTSTRAP_RETRY_DELAY_SECONDS=10
+```
+
+Se pueden cambiar sin modificar archivos:
+
+```bash
+BOOTSTRAP_RETRIES=20 \
+BOOTSTRAP_RETRY_DELAY_SECONDS=15 \
+./scripts/run-production.sh full transfer
+```
+
+Si el bootstrap no puede obtener los datos, el script termina antes de Gatling
+en lugar de continuar con variables vacias.
+
+Si ya conoces los IDs, puedes evitar las consultas de bootstrap:
+
+```bash
+CUSTOMER_ID=12212 \
+ACCOUNT_ID=12345 \
+TO_ACCOUNT_ID=12456 \
+./scripts/run-production.sh full transfer
+```
+
+Usa IDs reales de la instancia actual; los valores anteriores son solo un
+ejemplo de formato.
+
+## Cooldown
+
+Suite full sin espera:
+
+```bash
+TEST_COOLDOWN_SECONDS=0 ./scripts/run-production.sh full all
+```
+
+Suite full con dos minutos:
+
+```bash
+TEST_COOLDOWN_SECONDS=120 ./scripts/run-production.sh full all
+```
 
 ## GitHub Actions
 
@@ -73,16 +102,11 @@ Cada push a `main` ejecuta:
 ./scripts/run-production.sh full all
 ```
 
-GitHub Actions usa producción directamente, no Docker ni localhost.
-
-Si una HU falla sus assertions, la ejecución continúa con las siguientes. Al
-final el job queda en error si al menos una HU falló, pero los reportes de todas
-las simulaciones ejecutadas se conservan.
-
-## Reportes
+contra:
 
 ```text
-target/gatling/
+https://parabank.parasoft.com/parabank/services/bank
 ```
 
-En GitHub Actions se publican como artifact `gatling-full-reports`.
+El workflow sube los reportes de `target/gatling/` incluso cuando alguna
+assertion falla.
