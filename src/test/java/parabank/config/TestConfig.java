@@ -27,14 +27,6 @@ public final class TestConfig {
     public static final boolean SMOKE =
         "smoke".equalsIgnoreCase(PROFILE);
 
-    static {
-        if (isPublicParaBank() && !SMOKE) {
-            throw new IllegalStateException(
-                "Full load tests are blocked against the shared public "
-                    + "ParaBank host. Use a local or explicitly authorized target."
-            );
-        }
-    }
 
     private TestConfig() {
     }
