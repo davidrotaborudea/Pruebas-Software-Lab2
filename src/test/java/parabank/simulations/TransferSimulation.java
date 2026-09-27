@@ -9,7 +9,7 @@ import java.time.Duration;
 import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 import static parabank.config.HttpProtocols.JSON;
-import static parabank.config.TestConfig.*;
+import static parabank.config.TestConfig.SMOKE;
 
 public class TransferSimulation extends Simulation {
 
@@ -36,7 +36,10 @@ public class TransferSimulation extends Simulation {
             )
             .exec(
                 http("Verificar transferencia")
-                    .get("/accounts/#{fromAccountId}/transactions/amount/#{amount}")
+                    .get(
+                        "/accounts/#{fromAccountId}/transactions/amount/"
+                            + "#{amount}"
+                    )
                     .check(
                         status().is(200),
                         jsonPath("$[0].id").exists()
@@ -52,9 +55,17 @@ public class TransferSimulation extends Simulation {
         )
         .protocols(JSON)
         .assertions(
-            details("Transferencia").requestsPerSec().gte(minimumRequiredRate),
-            details("Transferencia").failedRequests().percent().is(0.0),
-            details("Verificar transferencia").failedRequests().percent().is(0.0)
+            details("Transferencia")
+                .requestsPerSec()
+                .gte(minimumRequiredRate),
+            details("Transferencia")
+                .failedRequests()
+                .percent()
+                .is(0.0),
+            details("Verificar transferencia")
+                .failedRequests()
+                .percent()
+                .is(0.0)
         );
     }
 }

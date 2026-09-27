@@ -8,7 +8,9 @@ import java.time.Duration;
 import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 import static parabank.config.HttpProtocols.JSON;
-import static parabank.config.TestConfig.*;
+import static parabank.config.TestConfig.ACCOUNT_ID;
+import static parabank.config.TestConfig.CUSTOMER_ID;
+import static parabank.config.TestConfig.SMOKE;
 
 public class LoanSimulation extends Simulation {
 
@@ -38,14 +40,23 @@ public class LoanSimulation extends Simulation {
     {
         setUp(
             loans.injectClosed(
-                rampConcurrentUsers(0).to(users).during(Duration.ofSeconds(rampSeconds)),
-                constantConcurrentUsers(users).during(Duration.ofSeconds(holdSeconds))
+                rampConcurrentUsers(0)
+                    .to(users)
+                    .during(Duration.ofSeconds(rampSeconds)),
+                constantConcurrentUsers(users)
+                    .during(Duration.ofSeconds(holdSeconds))
             )
         )
         .protocols(JSON)
         .assertions(
-            details("Solicitar prestamo").responseTime().mean().lte(5000),
-            details("Solicitar prestamo").successfulRequests().percent().gte(98.0)
+            details("Solicitar prestamo")
+                .responseTime()
+                .mean()
+                .lte(5000),
+            details("Solicitar prestamo")
+                .successfulRequests()
+                .percent()
+                .gte(98.0)
         );
     }
 }

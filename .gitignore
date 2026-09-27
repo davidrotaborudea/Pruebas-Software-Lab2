@@ -2,5 +2,9 @@ target/
 .idea/
 .vscode/
 *.iml
+*.log
 .DS_Store
+__MACOSX/
+__pycache__/
+*.pyc
 src/test/resources/data/transfers.csv

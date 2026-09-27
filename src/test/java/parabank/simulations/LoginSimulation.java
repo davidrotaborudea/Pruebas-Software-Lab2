@@ -8,7 +8,9 @@ import java.time.Duration;
 import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 import static parabank.config.HttpProtocols.JSON;
-import static parabank.config.TestConfig.*;
+import static parabank.config.TestConfig.PASSWORD;
+import static parabank.config.TestConfig.SMOKE;
+import static parabank.config.TestConfig.USERNAME;
 
 public class LoginSimulation extends Simulation {
 
@@ -48,13 +50,19 @@ public class LoginSimulation extends Simulation {
         setUp(
             normalLogin
                 .injectClosed(
-                    rampConcurrentUsers(0).to(normalUsers).during(Duration.ofSeconds(rampSeconds)),
-                    constantConcurrentUsers(normalUsers).during(Duration.ofSeconds(normalSeconds))
+                    rampConcurrentUsers(0)
+                        .to(normalUsers)
+                        .during(Duration.ofSeconds(rampSeconds)),
+                    constantConcurrentUsers(normalUsers)
+                        .during(Duration.ofSeconds(normalSeconds))
                 )
                 .andThen(
                     peakLogin.injectClosed(
-                        rampConcurrentUsers(normalUsers).to(peakUsers).during(Duration.ofSeconds(peakRampSeconds)),
-                        constantConcurrentUsers(peakUsers).during(Duration.ofSeconds(peakSeconds))
+                        rampConcurrentUsers(normalUsers)
+                            .to(peakUsers)
+                            .during(Duration.ofSeconds(peakRampSeconds)),
+                        constantConcurrentUsers(peakUsers)
+                            .during(Duration.ofSeconds(peakSeconds))
                     )
                 )
         )

@@ -6,7 +6,8 @@ import io.gatling.javaapi.core.Simulation;
 import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 import static parabank.config.HttpProtocols.JSON;
-import static parabank.config.TestConfig.*;
+import static parabank.config.TestConfig.ACCOUNT_ID;
+import static parabank.config.TestConfig.SMOKE;
 
 public class StatementSimulation extends Simulation {
 
@@ -31,8 +32,14 @@ public class StatementSimulation extends Simulation {
         )
         .protocols(JSON)
         .assertions(
-            details("Consultar estado de cuenta").responseTime().max().lte(3000),
-            details("Consultar estado de cuenta").failedRequests().percent().lte(1.0)
+            details("Consultar estado de cuenta")
+                .responseTime()
+                .max()
+                .lte(3000),
+            details("Consultar estado de cuenta")
+                .failedRequests()
+                .percent()
+                .lte(1.0)
         );
     }
 }

@@ -1,137 +1,139 @@
-# ParaBank + Gatling + GitHub Actions
+# ParaBank Gatling Performance Tests
 
-Proyecto de pruebas de rendimiento para cinco servicios REST de ParaBank usando
-Gatling Java DSL y GitHub Actions.
+Pruebas de rendimiento para cinco historias no funcionales de ParaBank,
+implementadas con Gatling Java DSL y ejecutadas en GitHub Actions.
 
-## Servicios cubiertos
+## Historias cubiertas
 
-| HU | Servicio | Endpoint | Inyección principal | Criterio automatizado |
-|---|---|---|---|---|
-| 1 | Login | `GET /login/{username}/{password}` | `rampConcurrentUsers` + `constantConcurrentUsers` | <= 2 s con 100 concurrentes y <= 5 s con 200 |
-| 2 | Transferencia | `POST /transfer` | `constantUsersPerSec` | >= 150 req/s, 0% fallos, feeder CSV y verificación posterior |
-| 3 | Estado de cuenta | `GET /accounts/{id}/transactions` | `atOnceUsers` | <= 3 s con 200 usuarios, error <= 1% |
-| 4 | Préstamo | `POST /requestLoan` | `rampConcurrentUsers` + `constantConcurrentUsers` | promedio <= 5 s, éxito >= 98% con 150 concurrentes |
-| 5 | Pago de servicios | `POST /billpay` | `constantConcurrentUsers` | <= 3 s, error <= 1% con 200 concurrentes + verificación en historial |
+| HU | Escenario | Criterio principal |
+|---|---|---|
+| 1 | Login | 100 concurrentes <= 2 s; 200 concurrentes <= 5 s |
+| 2 | Transferencias | >= 150 transferencias/s, 0% fallos y feeder CSV |
+| 3 | Estado de cuenta | 200 simultáneos, <= 3 s y error <= 1% |
+| 4 | Préstamo | 150 concurrentes, promedio <= 5 s y éxito >= 98% |
+| 5 | Pago de servicios | 200 concurrentes, <= 3 s, error <= 1% y sin duplicados |
 
-## Seguridad y entorno
+## GitHub Actions
 
-No ejecutes las cargas `full` contra `https://parabank.parasoft.com` salvo que
-tu profesor o el propietario del entorno haya autorizado expresamente esa carga.
-El workflow incluido crea una instancia local de ParaBank dentro del runner de
-GitHub Actions y ejecuta Gatling contra `localhost`.
+`.github/workflows/performance-tests.yml` ejecuta exclusivamente el perfil
+`full`.
+
+El runner:
+
+1. Descarga este proyecto.
+2. Configura Java 21.
+3. Clona el repositorio oficial de ParaBank.
+4. Compila ParaBank y construye su imagen Docker.
+5. Inicia ParaBank en `localhost:8080`.
+6. Obtiene dinámicamente el cliente y dos cuentas de `john/demo`.
+7. Genera 5000 filas para el feeder CSV de transferencias.
+8. Compila las simulaciones Gatling.
+9. Ejecuta las cinco simulaciones con `profile=full`.
+10. Publica los reportes Gatling y el log de ParaBank como artifacts.
+
+Las cargas completas se ejecutan contra la instancia local del runner. El
+proyecto bloquea intencionalmente `full` contra el host público compartido de
+ParaBank.
 
 ## Requisitos locales
 
 - Java 21
-- Maven 3.6.3+
+- Maven
 - Python 3
-- `curl`
-- Una instancia local/autorizada de ParaBank
+- Git
+- Docker
+- curl
 
-La URL REST esperada por defecto es:
+## Ejecutar la suite completa localmente
 
-`http://localhost:8080/parabank/services/bank`
-
-## Ejecución local
-
-Con ParaBank ya iniciado:
+Primero inicia ParaBank:
 
 ```bash
-chmod +x scripts/bootstrap-local.sh scripts/run-all.sh
-./scripts/bootstrap-local.sh
-./scripts/run-all.sh smoke
+chmod +x scripts/*.sh
+./scripts/start-parabank-local.sh
 ```
 
-Para la carga de la entrega:
+Prepara los IDs y el feeder:
 
 ```bash
-./scripts/bootstrap-local.sh
+./scripts/bootstrap-environment.sh
+```
+
+Ejecuta las cinco pruebas completas:
+
+```bash
 ./scripts/run-all.sh full
 ```
 
-Los reportes HTML quedan en:
+Al terminar:
+
+```bash
+./scripts/stop-parabank-local.sh
+```
+
+Los reportes quedan en:
 
 ```text
 target/gatling/
 ```
 
-## Ejecución individual
+## Smoke local opcional
 
-Después del bootstrap:
+El perfil `smoke` se conserva únicamente para comprobaciones rápidas locales:
 
 ```bash
-source target/runtime.env
-
-mvn gatling:test \
-  -Dgatling.simulationClass=parabank.simulations.LoginSimulation \
-  -Dprofile=full \
-  -DbaseUrl="$BASE_URL" \
-  -Dusername="$USERNAME" \
-  -Dpassword="$PASSWORD" \
-  -DcustomerId="$CUSTOMER_ID" \
-  -DaccountId="$ACCOUNT_ID" \
-  -DtoAccountId="$TO_ACCOUNT_ID"
+./scripts/run-all.sh smoke
 ```
 
-Cambia la clase por:
+GitHub Actions no utiliza este perfil.
 
-- `parabank.simulations.TransferSimulation`
-- `parabank.simulations.StatementSimulation`
-- `parabank.simulations.LoanSimulation`
-- `parabank.simulations.BillPaymentSimulation`
+## Feeder de transferencias
 
-## Feeder CSV
-
-La historia de transferencias usa explícitamente:
+HU2 utiliza explícitamente un feeder CSV:
 
 ```java
 csv("data/transfers.csv").queue()
 ```
 
-El archivo se genera durante el bootstrap con datos de las dos cuentas reales del
-usuario de prueba. Cada fila contiene:
+`bootstrap-environment.sh` genera 5000 filas por defecto. La carga `full`
+inyecta 160 usuarios por segundo durante 20 segundos, por lo que necesita unas
+3200 filas. Las 5000 filas dejan margen suficiente sin reutilizar datos.
 
-```csv
-fromAccountId,toAccountId,amount
+Puedes cambiar la cantidad antes del bootstrap:
+
+```bash
+export TRANSFER_FEEDER_ROWS=6000
+./scripts/bootstrap-environment.sh
 ```
 
-## GitHub Actions
+## Ejecutar contra otro entorno autorizado
 
-El workflow `.github/workflows/performance-tests.yml`:
+No necesitas iniciar Docker si ya tienes un ParaBank propio o autorizado:
 
-1. Descarga el código oficial de ParaBank.
-2. Compila ParaBank.
-3. Crea y arranca un contenedor local.
-4. Obtiene dinámicamente el `customerId` y dos cuentas de `john/demo`.
-5. Genera el feeder CSV.
-6. Compila los escenarios Gatling.
-7. Ejecuta las cinco simulaciones.
-8. Publica los reportes HTML como artifact.
+```bash
+export BASE_URL="https://mi-entorno/parabank/services/bank"
+export USERNAME="john"
+export PASSWORD="demo"
+./scripts/bootstrap-environment.sh
+./scripts/run-all.sh full
+```
 
-En `push` a `main` corre `smoke`.
-Para la evidencia final ve a:
+El perfil `full` se rechaza si `BASE_URL` apunta al host público compartido
+`parabank.parasoft.com`.
 
-`Actions -> ParaBank Performance Tests -> Run workflow -> profile: full`
+## Validación del proyecto
 
-## Qué significa PASS/FAIL
+Para validar scripts, longitud de líneas y compilación:
 
-Las assertions de Gatling convierten los criterios de aceptación en condiciones
-del build. Si una de ellas no se cumple, Gatling termina con error y GitHub
-Actions marca el job como fallido.
+```bash
+./scripts/verify-project.sh
+```
 
-Esto es intencional: una prueba de rendimiento que no cumple el SLA debe quedar
-evidenciada como fallo, no maquillarse como ejecución exitosa.
+Para borrar archivos generados o específicos del sistema operativo:
 
-## Nota sobre pagos duplicados
+```bash
+./scripts/clean-project.sh
+```
 
-Para cada usuario virtual se genera un `payeeName` único. Después de `billpay`,
-el escenario consulta el historial y exige exactamente una aparición de ese
-identificador. Esto permite detectar, en el alcance de ParaBank, que el mismo
-pago no haya quedado registrado más de una vez para esa ejecución.
-
-## Duración sugerida
-
-Las cargas `full` están recortadas para que la demostración sea viable en un
-runner académico. Si el profesor exige una duración concreta para cada carga,
-puedes aumentar los `durationSeconds` sin cambiar la estrategia ni las
-assertions.
+El script conserva `.git` y el código fuente; solo elimina artefactos que pueden
+regenerarse.

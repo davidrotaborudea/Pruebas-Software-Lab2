@@ -1,132 +1,87 @@
-# Guion de video — 10 a 15 minutos
+# Guion de video
 
-Duración objetivo: aproximadamente 12 minutos.
+Duración sugerida: 10 a 15 minutos.
 
-## 0:00 - 1:00 — Objetivo
+## Objetivo
 
-Explicar:
+Explicar que el proyecto implementa cinco historias no funcionales con Gatling,
+convierte sus criterios en assertions y ejecuta el perfil completo desde GitHub
+Actions contra una instancia local de ParaBank creada dentro del runner.
 
-- Se probaron cinco servicios REST de ParaBank.
-- Se usó Gatling con Java DSL.
-- Se utilizaron diferentes métodos de inyección.
-- La ejecución está automatizada en GitHub Actions.
-- Los criterios de aceptación están codificados como assertions.
-
-## 1:00 - 2:30 — Arquitectura del proyecto
+## Estructura
 
 Mostrar:
 
 - `pom.xml`
 - `src/test/java/parabank/simulations`
 - `src/test/resources/data`
+- `scripts`
 - `.github/workflows/performance-tests.yml`
-- `target/gatling`
+- `target/gatling` después de una ejecución
 
-Mencionar que GitHub Actions levanta ParaBank localmente para no generar carga
-no autorizada sobre el sitio público.
+## HU1: Login
 
-## 2:30 - 4:00 — HU1 Login
-
-Abrir `LoginSimulation.java`.
-
-Explicar:
+Mostrar `LoginSimulation.java` y explicar:
 
 - 100 usuarios concurrentes en carga normal.
 - 200 usuarios concurrentes en pico.
-- `rampConcurrentUsers` y `constantConcurrentUsers`.
-- Assertions:
-  - normal <= 2 s
-  - pico <= 5 s
-  - 0% de fallos
+- Máximo de 2 segundos para carga normal.
+- Máximo de 5 segundos para carga pico.
 
-Mostrar en el reporte de Gatling los tiempos y errores.
+## HU2: Transferencias
 
-## 4:00 - 5:30 — HU2 Transferencias
+Mostrar `TransferSimulation.java` y explicar:
 
-Abrir `TransferSimulation.java`.
+- Inyección de 160 usuarios por segundo.
+- Assertion mínima de 150 transferencias por segundo.
+- Feeder CSV con estrategia `queue()`.
+- 5000 filas generadas antes de la prueba.
+- Verificación posterior de cada transferencia mediante su importe único.
 
-Explicar:
-
-- `constantUsersPerSec(160)` deja margen para verificar >= 150 req/s.
-- Feeder CSV obligatorio.
-- Cada usuario consume una fila de `transfers.csv`.
-- Assertion >= 150 requests/segundo.
-- 0% fallos.
-- Se consulta cada importe único después de transferir para evidenciar que la transacción quedó registrada.
-
-Mostrar el CSV generado y el throughput del reporte.
-
-## 5:30 - 6:45 — HU3 Estado de cuenta
-
-Abrir `StatementSimulation.java`.
+## HU3: Estado de cuenta
 
 Explicar:
 
-- `atOnceUsers(200)` produce un pico simultáneo.
-- Endpoint de transacciones.
-- Máximo <= 3 s.
-- Error <= 1%.
+- 200 usuarios lanzados simultáneamente.
+- Tiempo máximo de 3 segundos.
+- Error máximo del 1%.
 
-Mostrar el reporte.
-
-## 6:45 - 8:00 — HU4 Préstamo
-
-Abrir `LoanSimulation.java`.
+## HU4: Préstamo
 
 Explicar:
 
 - 150 usuarios concurrentes.
-- Rampa y sostenimiento de concurrencia.
-- Promedio <= 5 s.
-- Éxito >= 98%.
-- La prueba valida que la respuesta de negocio contenga los campos del préstamo;
-  no exige que todos los préstamos sean aprobados, porque una denegación puede
-  ser una respuesta funcional válida.
+- Tiempo promedio máximo de 5 segundos.
+- Éxito mínimo del 98%.
+- Validación de la estructura funcional de la respuesta.
 
-Mostrar el reporte.
-
-## 8:00 - 9:15 — HU5 Pago de servicios
-
-Abrir `BillPaymentSimulation.java`.
+## HU5: Pago de servicios
 
 Explicar:
 
 - 200 usuarios concurrentes.
-- Máximo <= 3 s.
-- Error <= 1%.
-- Se genera un `payeeName` único.
-- Luego se consulta el historial y se verifica una sola aparición del pago,
-  cubriendo el criterio de no duplicación.
+- Tiempo máximo de 3 segundos.
+- Error máximo del 1%.
+- Identificador de beneficiario único por pago.
+- Verificación en historial con una sola aparición.
 
-Mostrar las dos requests en el reporte.
+## GitHub Actions
 
-## 9:15 - 11:00 — GitHub Actions
+Mostrar que el workflow:
 
-Abrir el workflow.
+1. Configura Java 21.
+2. Clona y compila ParaBank.
+3. Construye e inicia ParaBank con Docker.
+4. Genera los datos de prueba y el feeder.
+5. Compila Gatling.
+6. Ejecuta `./scripts/run-all.sh full`.
+7. Publica reportes y logs como artifacts.
 
-Mostrar:
+Aclarar que Actions no ejecuta `smoke`: el `full` se realiza contra la instancia
+local creada dentro del runner.
 
-1. Checkout.
-2. Java 21.
-3. Clone y build de ParaBank.
-4. Docker local.
-5. Bootstrap de IDs.
-6. Generación del feeder.
-7. Ejecución de las cinco simulaciones.
-8. Upload de artifacts.
+## Cierre
 
-Después mostrar una ejecución `full` en Actions.
-
-## 11:00 - 12:00 — Evidencias y cierre
-
-Descargar o abrir el artifact de reportes.
-
-Resumir para cada HU:
-
-- carga usada
-- método de inyección
-- SLA
-- PASS/FAIL observado
-
-Cerrar indicando que un FAIL en GitHub Actions representa un criterio no cumplido,
-no un error del pipeline.
+Mostrar los artifacts de GitHub Actions y resumir el resultado PASS/FAIL de cada
+historia. Un fallo de una assertion hace fallar el job y queda reflejado en el
+reporte correspondiente.
