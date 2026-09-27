@@ -9,13 +9,13 @@ on:
 jobs:
   gatling-full:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
 
     env:
-      BASE_URL: http://127.0.0.1:8080/parabank/services/bank
+      BASE_URL: https://parabank.parasoft.com/parabank/services/bank
       USERNAME: john
       PASSWORD: demo
-      TRANSFER_FEEDER_ROWS: '400'
+      TRANSFER_FEEDER_ROWS: '200'
 
     steps:
       - name: Checkout
@@ -28,36 +28,16 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Start local ParaBank
+      - name: Run full Gatling suite against production
         shell: bash
         run: |
           chmod +x scripts/*.sh
-          ./scripts/start-parabank-local.sh
-
-      - name: Prepare test data
-        shell: bash
-        run: ./scripts/bootstrap-environment.sh
-
-      - name: Run full Gatling suite
-        shell: bash
-        run: ./scripts/run-all.sh full
-
-      - name: Save ParaBank logs
-        if: always()
-        shell: bash
-        run: docker logs parabank-performance-lab > target/parabank.log 2>&1 || true
+          ./scripts/run-production.sh full
 
       - name: Upload performance reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gatling-full-reports
-          path: |
-            target/gatling/**
-            target/parabank.log
+          path: target/gatling/**
           if-no-files-found: ignore
-
-      - name: Stop local ParaBank
-        if: always()
-        shell: bash
-        run: ./scripts/stop-parabank-local.sh

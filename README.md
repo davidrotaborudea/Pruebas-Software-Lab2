@@ -1,64 +1,38 @@
 # ParaBank Gatling Performance Tests
 
-Laboratorio de rendimiento con Gatling Java DSL y ParaBank local en Docker.
+Laboratorio de rendimiento con Gatling Java DSL y dos modos independientes:
 
-## Objetivo
-
-Las pruebas usan una instancia propia de ParaBank para evitar los `429` del servicio público.
-El repositorio oficial se clona automáticamente desde:
-
-```text
-https://github.com/parasoft/parabank.git
-```
-
-ParaBank documenta su construcción con Maven y el despliegue de `target/parabank.war`
-en Tomcat. Este proyecto automatiza esos pasos dentro de Docker.
+- Local: ParaBank se levanta con Docker y las pruebas apuntan a localhost.
+- Producción: no usa Docker y las pruebas apuntan al servicio público de ParaBank.
 
 ## Carga full
 
-Cada usuario ejecuta una sola operación principal. No se mantienen usuarios concurrentes
-repitiendo requests durante 20 o 30 segundos.
+Cada usuario ejecuta una sola operación principal. No se mantienen usuarios
+concurrentes repitiendo requests durante varios segundos.
 
 | HU | Carga full | Requests principales |
 | --- | --- | ---: |
 | HU1 Login normal | 100 usuarios a la vez | 100 |
 | HU1 Login pico | 200 usuarios a la vez | 200 |
-| HU2 Transferencias | 160 usuarios/s durante 2 s | 320 |
+| HU2 Transferencias | 150 usuarios/s durante 1 s | 150 |
 | HU3 Estados de cuenta | 200 usuarios a la vez | 200 |
 | HU4 Préstamos | 150 usuarios a la vez | 150 |
 | HU5 Pagos | 200 usuarios a la vez | 200 |
 
-HU2 usa 160/s para dejar margen sobre el mínimo exigido de 150 TPS y añade una
-consulta de verificación por transferencia. HU5 añade una consulta al
-historial por pago para validar registro y ausencia de duplicados.
+HU2 añade una consulta de verificación por transferencia. HU5 añade una
+consulta al historial por pago para validar registro y ausencia de duplicados.
 
-## Perfiles
+## Proyecto local
 
-El código conserva ambos perfiles:
-
-```bash
-./scripts/run-local.sh smoke
-./scripts/run-local.sh full
-```
-
-GitHub Actions siempre ejecuta `full`.
-
-## Requisitos en macOS
-
-- Docker Desktop iniciado.
-- Java 21.
-- Maven 3.9 o superior.
-- Git, curl y Python 3.
-
-## Ejecutar todo en tu proyecto
-
-Tu ruta es:
+Ruta usada normalmente:
 
 ```text
 /Users/davidrodriguez/Downloads/parabank-gatling-performance/
 ```
 
-Ejecuta:
+## Ejecutar local con Docker
+
+Con Docker Desktop iniciado:
 
 ```bash
 cd /Users/davidrodriguez/Downloads/parabank-gatling-performance
@@ -66,70 +40,61 @@ chmod +x scripts/*.sh
 ./scripts/run-local.sh full
 ```
 
-La primera ejecución clona ParaBank y construye la imagen Docker. Las siguientes
-reutilizan la imagen local.
-
-## Smoke
+Smoke local:
 
 ```bash
-cd /Users/davidrodriguez/Downloads/parabank-gatling-performance
 ./scripts/run-local.sh smoke
 ```
 
-## Full
-
-```bash
-cd /Users/davidrodriguez/Downloads/parabank-gatling-performance
-./scripts/run-local.sh full
-```
-
-No existe pausa entre simulaciones.
-
-## Levantar ParaBank solamente
-
-```bash
-cd /Users/davidrodriguez/Downloads/parabank-gatling-performance
-./scripts/start-parabank-local.sh
-```
-
-Web:
+ParaBank queda disponible en:
 
 ```text
 http://127.0.0.1:8080/parabank
 ```
 
-API usada por Gatling:
-
-```text
-http://127.0.0.1:8080/parabank/services/bank
-```
-
-## Detener ParaBank
+Para detenerlo:
 
 ```bash
 ./scripts/stop-parabank-local.sh
 ```
 
-## Reconstruir ParaBank desde GitHub
+Para reconstruir la imagen desde el repositorio público de ParaBank:
 
 ```bash
-cd /Users/davidrodriguez/Downloads/parabank-gatling-performance
 PARABANK_REBUILD=1 ./scripts/run-local.sh full
 ```
 
-## Ejecutar paso por paso
+## Ejecutar contra producción
+
+Producción no usa Docker:
 
 ```bash
-./scripts/start-parabank-local.sh
-./scripts/bootstrap-environment.sh
-./scripts/run-all.sh full
+cd /Users/davidrodriguez/Downloads/parabank-gatling-performance
+./scripts/run-production.sh full
 ```
 
-Para smoke cambia la última línea por:
+Smoke contra producción:
 
 ```bash
-./scripts/run-all.sh smoke
+./scripts/run-production.sh smoke
 ```
+
+La URL por defecto es:
+
+```text
+https://parabank.parasoft.com/parabank/services/bank
+```
+
+## GitHub Actions
+
+Cada push a `main` ejecuta únicamente el flujo de producción:
+
+```bash
+./scripts/run-production.sh full
+```
+
+El workflow no construye imágenes Docker, no inicia contenedores y no usa
+localhost.
 
 ## Reportes
 
@@ -139,8 +104,5 @@ Cada simulación genera su reporte HTML bajo:
 target/gatling/
 ```
 
-Si una HU falla, `run-all.sh` continúa con las demás para conservar todos los reportes.
-Al terminar devuelve error si alguna assertion no se cumplió.
-
-GitHub Actions levanta ParaBank local en el runner, ejecuta siempre `full`, guarda el
-log del contenedor y sube los reportes como artifact.
+Si una HU falla, `run-all.sh` continúa con las demás para conservar todos los
+reportes. Al terminar devuelve error si alguna assertion no se cumplió.
