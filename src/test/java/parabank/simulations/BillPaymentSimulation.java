@@ -44,7 +44,7 @@ public class BillPaymentSimulation extends Simulation {
                     .asJson()
                     .check(
                         status().is(200),
-                        jsonPath("$.payeeName").is("#{payeeName}"),
+                        jsonPath("$.payeeName").is(session -> session.getString("payeeName")),
                         jsonPath("$.accountId").ofInt().is(Integer.parseInt(ACCOUNT_ID))
                     )
             )
@@ -53,7 +53,7 @@ public class BillPaymentSimulation extends Simulation {
                     .get("/accounts/" + ACCOUNT_ID + "/transactions")
                     .check(
                         status().is(200),
-                        substring("#{payeeName}").count().is(1)
+                        substring(session -> session.getString("payeeName")).count().is(1)
                     )
             )
             .pause(Duration.ofMillis(pauseMillis));

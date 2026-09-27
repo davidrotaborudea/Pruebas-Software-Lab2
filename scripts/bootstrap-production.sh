@@ -18,7 +18,7 @@ LOGIN_JSON="$(curl -fsS \
   -H 'Accept: application/json' \
   "${BASE_URL}/login/${USERNAME}/${PASSWORD}")"
 
-CUSTOMER_ID="$(python3 -c \
+CUSTOMER_ID="$(python -c \
   'import json,sys; print(json.load(sys.stdin)["id"])' \
   <<< "${LOGIN_JSON}")"
 
@@ -29,7 +29,7 @@ ACCOUNTS_JSON="$(curl -fsS \
   "${BASE_URL}/customers/${CUSTOMER_ID}/accounts")"
 
 read -r ACCOUNT_ID TO_ACCOUNT_ID < <(
-  python3 -c '
+  python -c '
 import json,sys
 accounts=json.load(sys.stdin)
 if len(accounts) < 2:
@@ -47,7 +47,7 @@ ACCOUNT_ID=${ACCOUNT_ID}
 TO_ACCOUNT_ID=${TO_ACCOUNT_ID}
 EOF
 
-python3 scripts/generate-transfer-feeder.py \
+python scripts/generate-transfer-feeder.py \
   --from-account "${ACCOUNT_ID}" \
   --to-account "${TO_ACCOUNT_ID}" \
   --rows 100
