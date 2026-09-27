@@ -1,0 +1,49 @@
+name: ParaBank Public Smoke Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  gatling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      BASE_URL: https://parabank.parasoft.com/parabank/services/bank
+      USERNAME: john
+      PASSWORD: demo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Prepare ParaBank demo data
+        run: |
+          chmod +x scripts/bootstrap-production.sh
+          ./scripts/bootstrap-production.sh
+
+      - name: Compile Gatling simulations
+        run: mvn --batch-mode test-compile
+
+      - name: Run public smoke tests
+        run: |
+          chmod +x scripts/run-all.sh
+          ./scripts/run-all.sh smoke
+
+      - name: Upload Gatling reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gatling-public-smoke-reports
+          path: target/gatling/**
+          if-no-files-found: warn
