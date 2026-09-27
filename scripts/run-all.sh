@@ -27,6 +27,14 @@ fi
 USERNAME="${USERNAME:-john}"
 PASSWORD="${PASSWORD:-demo}"
 
+if [[ -n "${TEST_COOLDOWN_SECONDS:-}" ]]; then
+  COOLDOWN_SECONDS="${TEST_COOLDOWN_SECONDS}"
+elif [[ "${PROFILE}" == "full" ]]; then
+  COOLDOWN_SECONDS=90
+else
+  COOLDOWN_SECONDS=0
+fi
+
 COMMON_ARGS=(
   "-Dprofile=${PROFILE}"
   "-DbaseUrl=${BASE_URL}"
@@ -46,17 +54,39 @@ SIMULATIONS=(
 )
 
 FAIL=0
+LAST_INDEX=$((${#SIMULATIONS[@]} - 1))
 
-for SIMULATION in "${SIMULATIONS[@]}"; do
+for INDEX in "${!SIMULATIONS[@]}"; do
+  SIMULATION="${SIMULATIONS[$INDEX]}"
+
   echo
   echo "============================================================"
   echo "Running ${SIMULATION} with profile=${PROFILE}"
   echo "Target: ${BASE_URL}"
   echo "============================================================"
 
-  mvn --batch-mode gatling:test \
+  if ! mvn --batch-mode gatling:test \
     "-Dgatling.simulationClass=${SIMULATION}" \
-    "${COMMON_ARGS[@]}" || FAIL=1
+    "${COMMON_ARGS[@]}"; then
+    FAIL=1
+    echo
+    echo "Simulation failed. The suite will continue so its report is preserved."
+  fi
+
+  if [[ "${INDEX}" -lt "${LAST_INDEX}" && "${COOLDOWN_SECONDS}" -gt 0 ]]; then
+    echo
+    echo "Waiting ${COOLDOWN_SECONDS}s before the next simulation..."
+    sleep "${COOLDOWN_SECONDS}"
+  fi
 done
+
+echo
+if [[ "${FAIL}" -eq 0 ]]; then
+  echo "All simulations completed successfully."
+else
+  echo "All simulations completed. One or more acceptance assertions failed."
+fi
+
+echo "Gatling reports are available under target/gatling/."
 
 exit "${FAIL}"

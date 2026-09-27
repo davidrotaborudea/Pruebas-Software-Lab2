@@ -1,70 +1,79 @@
 # ParaBank Gatling Performance Tests
 
-Laboratorio de rendimiento para cinco historias no funcionales de ParaBank,
-implementado con Gatling Java DSL y GitHub Actions.
+Laboratorio de pruebas de rendimiento con Gatling Java DSL sobre ParaBank.
 
-## Historias cubiertas
+## Perfiles
 
-| HU | Escenario | Criterio principal |
-|---|---|---|
-| 1 | Login | 100 concurrentes <= 2 s; 200 concurrentes <= 5 s |
-| 2 | Transferencias | >= 150 transferencias/s, 0% fallos y feeder CSV |
-| 3 | Estado de cuenta | 200 simultáneos, <= 3 s y error <= 1% |
-| 4 | Préstamo | 150 concurrentes, promedio <= 5 s y éxito >= 98% |
-| 5 | Pago de servicios | 200 concurrentes, <= 3 s, error <= 1% y sin duplicados |
+El proyecto conserva dos perfiles:
 
-## Estructura
+```bash
+./scripts/run-all.sh smoke
+./scripts/run-all.sh full
+```
 
-El laboratorio conserva dos perfiles:
+`smoke` usa cargas pequeñas para validar rápidamente el flujo. `full` ejecuta las cargas y
+assertions definidas para las cinco historias no funcionales.
 
-- `smoke`: ejecución rápida para comprobaciones locales.
-- `full`: carga completa correspondiente a las historias no funcionales.
+GitHub Actions siempre ejecuta:
 
-GitHub Actions ejecuta siempre `full`.
+```bash
+./scripts/run-all.sh full
+```
 
-## Requisitos locales
+## Preparación
 
-- Java 21
-- Maven
-- Python 3
-- curl
-
-No se necesita Docker.
-
-## Preparar datos
+Antes de ejecutar las simulaciones:
 
 ```bash
 chmod +x scripts/bootstrap-environment.sh scripts/run-all.sh
 ./scripts/bootstrap-environment.sh
 ```
 
-El bootstrap obtiene el cliente y dos cuentas y genera 5000 filas en
-`src/test/resources/data/transfers.csv` para HU2.
+El bootstrap obtiene los identificadores necesarios y genera el feeder CSV de transferencias.
 
-## Ejecutar smoke
+## Ejecución local
+
+Smoke:
 
 ```bash
 ./scripts/run-all.sh smoke
 ```
 
-## Ejecutar full
+Full:
 
 ```bash
 ./scripts/run-all.sh full
 ```
 
-## GitHub Actions
+## Pausa entre simulaciones
 
-El workflow `.github/workflows/performance-tests.yml` se ejecuta en cada push a
-`main` y también manualmente mediante `workflow_dispatch`.
+El perfil `full` espera 90 segundos entre simulaciones para evitar que una prueba deje al
+servidor inmediatamente limitado para la siguiente.
 
-La secuencia es:
+La pausa se puede cambiar sin modificar código:
 
-1. Checkout.
-2. Java 21.
-3. Bootstrap de datos.
-4. Compilación de las simulaciones.
-5. Ejecución de las cinco simulaciones con `full`.
-6. Publicación de los reportes de Gatling.
+```bash
+TEST_COOLDOWN_SECONDS=120 ./scripts/run-all.sh full
+```
 
-Los reportes quedan disponibles como artifact `gatling-full-reports`.
+Para quitarla:
+
+```bash
+TEST_COOLDOWN_SECONDS=0 ./scripts/run-all.sh full
+```
+
+En `smoke` la pausa por defecto es 0 segundos.
+
+Si una simulación falla por assertions o respuestas HTTP, `run-all.sh` continúa con las
+demás para conservar todos los reportes. Al final devuelve error si alguna historia no
+cumplió sus criterios.
+
+## Reportes
+
+Gatling genera los reportes en:
+
+```text
+target/gatling/
+```
+
+GitHub Actions los sube como artifact incluso cuando alguna simulación falla.
