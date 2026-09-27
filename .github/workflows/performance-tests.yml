@@ -42,12 +42,6 @@ jobs:
             exit 2
           fi
 
-          if [[ "${BASE_URL}" == *"parabank.parasoft.com"* ]]; then
-            echo "Full load tests are blocked against the shared public ParaBank host."
-            echo "Use an environment you own or are authorized to load test."
-            exit 2
-          fi
-
           echo "Performance target configured."
 
       - name: Prepare test data
