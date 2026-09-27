@@ -10,8 +10,15 @@ import static io.gatling.javaapi.http.HttpDsl.*;
 import static parabank.config.HttpProtocols.JSON;
 import static parabank.config.TestConfig.ACCOUNT_ID;
 import static parabank.config.TestConfig.CUSTOMER_ID;
+import static parabank.config.TestConfig.SMOKE;
 
 public class LoanSimulation extends Simulation {
+
+    private final int users = SMOKE ? 1 : 150;
+    private final int rampSeconds = SMOKE ? 1 : 12;
+    private final int holdSeconds = SMOKE ? 2 : 20;
+    private final long pauseMillis = SMOKE ? 2000 : 750;
+
     private final ScenarioBuilder loans =
         scenario("HU4 Solicitud de prestamo")
             .exec(
@@ -28,16 +35,16 @@ public class LoanSimulation extends Simulation {
                         jsonPath("$.loanProviderName").exists()
                     )
             )
-            .pause(Duration.ofMillis(750));
+            .pause(Duration.ofMillis(pauseMillis));
 
     {
         setUp(
             loans.injectClosed(
                 rampConcurrentUsers(0)
-                    .to(150)
-                    .during(Duration.ofSeconds(12)),
-                constantConcurrentUsers(150)
-                    .during(Duration.ofSeconds(20))
+                    .to(users)
+                    .during(Duration.ofSeconds(rampSeconds)),
+                constantConcurrentUsers(users)
+                    .during(Duration.ofSeconds(holdSeconds))
             )
         )
         .protocols(JSON)

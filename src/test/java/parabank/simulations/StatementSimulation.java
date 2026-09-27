@@ -7,8 +7,12 @@ import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 import static parabank.config.HttpProtocols.JSON;
 import static parabank.config.TestConfig.ACCOUNT_ID;
+import static parabank.config.TestConfig.SMOKE;
 
 public class StatementSimulation extends Simulation {
+
+    private final int users = SMOKE ? 2 : 200;
+
     private final ScenarioBuilder statements =
         scenario("HU3 Estados de cuenta")
             .exec(
@@ -22,7 +26,9 @@ public class StatementSimulation extends Simulation {
 
     {
         setUp(
-            statements.injectOpen(atOnceUsers(200))
+            statements.injectOpen(
+                atOnceUsers(users)
+            )
         )
         .protocols(JSON)
         .assertions(

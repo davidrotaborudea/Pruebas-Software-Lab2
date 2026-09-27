@@ -1,11 +1,11 @@
 # ParaBank Gatling Performance Tests
 
-Laboratorio de rendimiento con Gatling Java DSL y GitHub Actions.
-El pipeline ejecuta siempre las cinco historias no funcionales con carga completa.
+Laboratorio de rendimiento para cinco historias no funcionales de ParaBank,
+implementado con Gatling Java DSL y GitHub Actions.
 
-## Historias
+## Historias cubiertas
 
-| HU | Prueba | Criterio |
+| HU | Escenario | Criterio principal |
 |---|---|---|
 | 1 | Login | 100 concurrentes <= 2 s; 200 concurrentes <= 5 s |
 | 2 | Transferencias | >= 150 transferencias/s, 0% fallos y feeder CSV |
@@ -13,38 +13,58 @@ El pipeline ejecuta siempre las cinco historias no funcionales con carga complet
 | 4 | Préstamo | 150 concurrentes, promedio <= 5 s y éxito >= 98% |
 | 5 | Pago de servicios | 200 concurrentes, <= 3 s, error <= 1% y sin duplicados |
 
+## Estructura
+
+El laboratorio conserva dos perfiles:
+
+- `smoke`: ejecución rápida para comprobaciones locales.
+- `full`: carga completa correspondiente a las historias no funcionales.
+
+GitHub Actions ejecuta siempre `full`.
+
+## Requisitos locales
+
+- Java 21
+- Maven
+- Python 3
+- curl
+
+No se necesita Docker.
+
+## Preparar datos
+
+```bash
+chmod +x scripts/bootstrap-environment.sh scripts/run-all.sh
+./scripts/bootstrap-environment.sh
+```
+
+El bootstrap obtiene el cliente y dos cuentas y genera 5000 filas en
+`src/test/resources/data/transfers.csv` para HU2.
+
+## Ejecutar smoke
+
+```bash
+./scripts/run-all.sh smoke
+```
+
+## Ejecutar full
+
+```bash
+./scripts/run-all.sh full
+```
+
 ## GitHub Actions
 
-Configura estos secrets en el repositorio:
+El workflow `.github/workflows/performance-tests.yml` se ejecuta en cada push a
+`main` y también manualmente mediante `workflow_dispatch`.
 
-```text
-PERF_BASE_URL
-PERF_USERNAME
-PERF_PASSWORD
-```
+La secuencia es:
 
-`PERF_USERNAME` y `PERF_PASSWORD` son opcionales si se usa `john/demo`.
+1. Checkout.
+2. Java 21.
+3. Bootstrap de datos.
+4. Compilación de las simulaciones.
+5. Ejecución de las cinco simulaciones con `full`.
+6. Publicación de los reportes de Gatling.
 
-El workflow ejecuta:
-
-```bash
-./scripts/run-full.sh
-```
-
-El script obtiene el cliente y sus cuentas, genera el feeder CSV, compila las
-simulaciones y ejecuta las cinco pruebas secuencialmente. Los reportes se suben
-como artifact aunque una historia falle.
-
-Un workflow rojo después de iniciar Gatling significa que una o más assertions
-de rendimiento no se cumplieron. Los reportes quedan en `target/gatling/`.
-
-## Ejecución local
-
-Requisitos: Java 21, Maven, curl y Python 3.
-
-```bash
-export BASE_URL="https://servidor/parabank/services/bank"
-export USERNAME="john"
-export PASSWORD="demo"
-./scripts/run-full.sh
-```
+Los reportes quedan disponibles como artifact `gatling-full-reports`.
