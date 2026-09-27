@@ -17,7 +17,7 @@ export BASE_URL="${BASE_URL:-https://parabank.parasoft.com/parabank/services/ban
 export USERNAME="${USERNAME:-john}"
 export PASSWORD="${PASSWORD:-demo}"
 export TRANSFER_FEEDER_ROWS="${TRANSFER_FEEDER_ROWS:-200}"
-export TEST_COOLDOWN_SECONDS="${TEST_COOLDOWN_SECONDS:-120}"
+export TEST_COOLDOWN_SECONDS="${TEST_COOLDOWN_SECONDS:-300}"
 
 "${SCRIPT_DIR}/bootstrap-environment.sh"
 "${SCRIPT_DIR}/run-all.sh" "${PROFILE}"

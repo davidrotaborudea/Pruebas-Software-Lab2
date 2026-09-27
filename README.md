@@ -25,7 +25,7 @@ HU2 añade una consulta de verificación por transferencia para validar que no s
 pierda la operación. HU5 añade una consulta al historial por pago para comprobar
 registro y ausencia de duplicados.
 
-En producción hay una pausa de 120 segundos entre historias para evitar que el
+En producción hay una pausa de 300 segundos entre historias para evitar que el
 rate limit del demo público afecte inmediatamente la siguiente HU. La pausa no
 cambia la carga de cada prueba. En local con Docker no hay pausa por defecto.
 
@@ -147,7 +147,7 @@ Cada `push` a `main` ejecuta:
 
 No levanta Docker en GitHub Actions. El workflow apunta a producción, ejecuta
 las cinco simulaciones con la carga `full` definida por el laboratorio y espera
-120 segundos entre historias.
+300 segundos entre historias.
 
 Si una simulación falla sus assertions, `run-all.sh` continúa con las restantes.
 Al final devuelve error si una o más historias no cumplieron sus criterios.
@@ -162,3 +162,9 @@ target/gatling/
 
 En GitHub Actions se publican como artifact `gatling-full-reports` incluso cuando
 alguna prueba falla.
+
+## Cooldown de producción
+
+GitHub Actions y `run-production.sh` usan 300 segundos entre historias de usuario.
+El modo local mantiene cooldown 0 por defecto. El cooldown solo separa una HU de la siguiente;
+no reduce la concurrencia ni el TPS definidos dentro de cada simulación.

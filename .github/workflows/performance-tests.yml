@@ -9,14 +9,14 @@ on:
 jobs:
   gatling-full:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     env:
       BASE_URL: https://parabank.parasoft.com/parabank/services/bank
       USERNAME: john
       PASSWORD: demo
       TRANSFER_FEEDER_ROWS: '200'
-      TEST_COOLDOWN_SECONDS: '120'
+      TEST_COOLDOWN_SECONDS: '300'
 
     steps:
       - name: Checkout
