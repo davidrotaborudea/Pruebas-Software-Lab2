@@ -9,18 +9,11 @@ import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 import static parabank.config.HttpProtocols.JSON;
 import static parabank.config.TestConfig.PASSWORD;
-import static parabank.config.TestConfig.SMOKE;
 import static parabank.config.TestConfig.USERNAME;
 
 public class LoginSimulation extends Simulation {
-
-    private final int normalUsers = SMOKE ? 1 : 100;
-    private final int peakUsers = SMOKE ? 2 : 200;
-    private final int normalSeconds = SMOKE ? 2 : 25;
-    private final int peakSeconds = SMOKE ? 2 : 20;
-    private final int rampSeconds = SMOKE ? 1 : 10;
-    private final int peakRampSeconds = SMOKE ? 1 : 8;
-    private final long pauseMillis = SMOKE ? 2000 : 750;
+    private static final int NORMAL_USERS = 100;
+    private static final int PEAK_USERS = 200;
 
     private final ScenarioBuilder normalLogin =
         scenario("HU1 Login carga normal")
@@ -32,7 +25,7 @@ public class LoginSimulation extends Simulation {
                         jsonPath("$.id").exists()
                     )
             )
-            .pause(Duration.ofMillis(pauseMillis));
+            .pause(Duration.ofMillis(750));
 
     private final ScenarioBuilder peakLogin =
         scenario("HU1 Login carga pico")
@@ -44,25 +37,25 @@ public class LoginSimulation extends Simulation {
                         jsonPath("$.id").exists()
                     )
             )
-            .pause(Duration.ofMillis(pauseMillis));
+            .pause(Duration.ofMillis(750));
 
     {
         setUp(
             normalLogin
                 .injectClosed(
                     rampConcurrentUsers(0)
-                        .to(normalUsers)
-                        .during(Duration.ofSeconds(rampSeconds)),
-                    constantConcurrentUsers(normalUsers)
-                        .during(Duration.ofSeconds(normalSeconds))
+                        .to(NORMAL_USERS)
+                        .during(Duration.ofSeconds(10)),
+                    constantConcurrentUsers(NORMAL_USERS)
+                        .during(Duration.ofSeconds(25))
                 )
                 .andThen(
                     peakLogin.injectClosed(
-                        rampConcurrentUsers(normalUsers)
-                            .to(peakUsers)
-                            .during(Duration.ofSeconds(peakRampSeconds)),
-                        constantConcurrentUsers(peakUsers)
-                            .during(Duration.ofSeconds(peakSeconds))
+                        rampConcurrentUsers(NORMAL_USERS)
+                            .to(PEAK_USERS)
+                            .during(Duration.ofSeconds(8)),
+                        constantConcurrentUsers(PEAK_USERS)
+                            .during(Duration.ofSeconds(20))
                     )
                 )
         )

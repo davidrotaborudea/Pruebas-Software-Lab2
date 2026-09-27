@@ -9,13 +9,10 @@ import java.time.Duration;
 import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 import static parabank.config.HttpProtocols.JSON;
-import static parabank.config.TestConfig.SMOKE;
 
 public class TransferSimulation extends Simulation {
-
-    private final double targetRate = SMOKE ? 0.5 : 160.0;
-    private final double minimumRequiredRate = SMOKE ? 0.2 : 150.0;
-    private final int durationSeconds = SMOKE ? 4 : 20;
+    private static final double TARGET_RATE = 160.0;
+    private static final double MINIMUM_RATE = 150.0;
 
     private final FeederBuilder<String> transferFeeder =
         csv("data/transfers.csv").queue();
@@ -49,23 +46,15 @@ public class TransferSimulation extends Simulation {
     {
         setUp(
             transfers.injectOpen(
-                constantUsersPerSec(targetRate)
-                    .during(Duration.ofSeconds(durationSeconds))
+                constantUsersPerSec(TARGET_RATE)
+                    .during(Duration.ofSeconds(20))
             )
         )
         .protocols(JSON)
         .assertions(
-            details("Transferencia")
-                .requestsPerSec()
-                .gte(minimumRequiredRate),
-            details("Transferencia")
-                .failedRequests()
-                .percent()
-                .is(0.0),
-            details("Verificar transferencia")
-                .failedRequests()
-                .percent()
-                .is(0.0)
+            details("Transferencia").requestsPerSec().gte(MINIMUM_RATE),
+            details("Transferencia").failedRequests().percent().is(0.0),
+            details("Verificar transferencia").failedRequests().percent().is(0.0)
         );
     }
 }
