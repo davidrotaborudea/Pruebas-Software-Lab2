@@ -4,7 +4,7 @@ set -euo pipefail
 BASE_URL="${BASE_URL:-http://127.0.0.1:8080/parabank/services/bank}"
 USERNAME="${USERNAME:-john}"
 PASSWORD="${PASSWORD:-demo}"
-TRANSFER_FEEDER_ROWS="${TRANSFER_FEEDER_ROWS:-400}"
+TRANSFER_FEEDER_ROWS="${TRANSFER_FEEDER_ROWS:-200}"
 
 mkdir -p target
 

@@ -17,7 +17,8 @@ esac
 export BASE_URL="${BASE_URL:-http://127.0.0.1:${PARABANK_PORT}/parabank/services/bank}"
 export USERNAME="${USERNAME:-john}"
 export PASSWORD="${PASSWORD:-demo}"
-export TRANSFER_FEEDER_ROWS="${TRANSFER_FEEDER_ROWS:-400}"
+export TRANSFER_FEEDER_ROWS="${TRANSFER_FEEDER_ROWS:-200}"
+export TEST_COOLDOWN_SECONDS="${TEST_COOLDOWN_SECONDS:-0}"
 
 "${SCRIPT_DIR}/start-parabank-local.sh"
 "${SCRIPT_DIR}/bootstrap-environment.sh"

@@ -26,6 +26,7 @@ fi
 
 USERNAME="${USERNAME:-john}"
 PASSWORD="${PASSWORD:-demo}"
+TEST_COOLDOWN_SECONDS="${TEST_COOLDOWN_SECONDS:-0}"
 
 COMMON_ARGS=(
   "-Dprofile=${PROFILE}"
@@ -46,8 +47,11 @@ SIMULATIONS=(
 )
 
 FAIL=0
+LAST_INDEX=$((${#SIMULATIONS[@]} - 1))
 
-for SIMULATION in "${SIMULATIONS[@]}"; do
+for INDEX in "${!SIMULATIONS[@]}"; do
+  SIMULATION="${SIMULATIONS[$INDEX]}"
+
   echo
   echo "============================================================"
   echo "Running ${SIMULATION} with profile=${PROFILE}"
@@ -60,6 +64,13 @@ for SIMULATION in "${SIMULATIONS[@]}"; do
     FAIL=1
     echo
     echo "Simulation failed. Continuing with the remaining simulations."
+  fi
+
+  if [[ "${INDEX}" -lt "${LAST_INDEX}" ]] && \
+    [[ "${TEST_COOLDOWN_SECONDS}" -gt 0 ]]; then
+    echo
+    echo "Waiting ${TEST_COOLDOWN_SECONDS}s before the next HU..."
+    sleep "${TEST_COOLDOWN_SECONDS}"
   fi
 done
 
