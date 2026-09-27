@@ -46,8 +46,11 @@ SIMULATIONS=(
 )
 
 FAIL=0
+TOTAL=${#SIMULATIONS[@]}
 
-for SIM in "${SIMULATIONS[@]}"; do
+for i in "${!SIMULATIONS[@]}"; do
+  SIM="${SIMULATIONS[$i]}"
+
   echo
   echo "============================================================"
   echo "Running ${SIM} with profile=${PROFILE}"
@@ -57,6 +60,12 @@ for SIM in "${SIMULATIONS[@]}"; do
   mvn --batch-mode gatling:test \
     "-Dgatling.simulationClass=${SIM}" \
     "${COMMON_ARGS[@]}" || FAIL=1
+
+  if [[ "${PROFILE}" == "smoke" && $((i + 1)) -lt "${TOTAL}" ]]; then
+    echo
+    echo "Cooling down for 20 seconds to avoid public rate limiting..."
+    sleep 20
+  fi
 done
 
 exit "${FAIL}"

@@ -12,9 +12,10 @@ import static parabank.config.TestConfig.*;
 
 public class LoanSimulation extends Simulation {
 
-    private final int users = SMOKE ? 15 : 150;
-    private final int rampSeconds = SMOKE ? 3 : 12;
-    private final int holdSeconds = SMOKE ? 5 : 20;
+    private final int users = SMOKE ? 1 : 150;
+    private final int rampSeconds = SMOKE ? 1 : 12;
+    private final int holdSeconds = SMOKE ? 2 : 20;
+    private final long pauseMillis = SMOKE ? 2000 : 750;
 
     private final ScenarioBuilder loans =
         scenario("HU4 Solicitud de prestamo")
@@ -32,7 +33,7 @@ public class LoanSimulation extends Simulation {
                         jsonPath("$.loanProviderName").exists()
                     )
             )
-            .pause(Duration.ofMillis(750));
+            .pause(Duration.ofMillis(pauseMillis));
 
     {
         setUp(

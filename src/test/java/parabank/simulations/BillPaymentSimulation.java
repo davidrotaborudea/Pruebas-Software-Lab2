@@ -12,14 +12,15 @@ import static parabank.config.TestConfig.*;
 
 public class BillPaymentSimulation extends Simulation {
 
-    private final int users = SMOKE ? 20 : 200;
-    private final int durationSeconds = SMOKE ? 5 : 20;
+    private final int users = SMOKE ? 1 : 200;
+    private final int durationSeconds = SMOKE ? 2 : 20;
+    private final long pauseMillis = SMOKE ? 2000 : 750;
 
     private final ScenarioBuilder billPayments =
         scenario("HU5 Pago de servicios")
             .exec(session ->
                 session
-                    .set("payeeName", "Gatling-Service-" + session.userId())
+                    .set("payeeName", "Gatling-Service-" + session.userId() + "-" + System.nanoTime())
                     .set("paymentAmount", "0.01")
             )
             .exec(
@@ -55,7 +56,7 @@ public class BillPaymentSimulation extends Simulation {
                         substring("#{payeeName}").count().is(1)
                     )
             )
-            .pause(Duration.ofMillis(750));
+            .pause(Duration.ofMillis(pauseMillis));
 
     {
         setUp(

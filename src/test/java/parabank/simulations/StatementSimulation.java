@@ -10,7 +10,7 @@ import static parabank.config.TestConfig.*;
 
 public class StatementSimulation extends Simulation {
 
-    private final int users = SMOKE ? 20 : 200;
+    private final int users = SMOKE ? 2 : 200;
 
     private final ScenarioBuilder statements =
         scenario("HU3 Estados de cuenta")

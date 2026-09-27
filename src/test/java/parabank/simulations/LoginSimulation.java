@@ -12,10 +12,13 @@ import static parabank.config.TestConfig.*;
 
 public class LoginSimulation extends Simulation {
 
-    private final int normalUsers = SMOKE ? 10 : 100;
-    private final int peakUsers = SMOKE ? 20 : 200;
-    private final int normalSeconds = SMOKE ? 5 : 25;
-    private final int peakSeconds = SMOKE ? 5 : 20;
+    private final int normalUsers = SMOKE ? 1 : 100;
+    private final int peakUsers = SMOKE ? 2 : 200;
+    private final int normalSeconds = SMOKE ? 2 : 25;
+    private final int peakSeconds = SMOKE ? 2 : 20;
+    private final int rampSeconds = SMOKE ? 1 : 10;
+    private final int peakRampSeconds = SMOKE ? 1 : 8;
+    private final long pauseMillis = SMOKE ? 2000 : 750;
 
     private final ScenarioBuilder normalLogin =
         scenario("HU1 Login carga normal")
@@ -27,7 +30,7 @@ public class LoginSimulation extends Simulation {
                         jsonPath("$.id").exists()
                     )
             )
-            .pause(Duration.ofMillis(750));
+            .pause(Duration.ofMillis(pauseMillis));
 
     private final ScenarioBuilder peakLogin =
         scenario("HU1 Login carga pico")
@@ -39,18 +42,18 @@ public class LoginSimulation extends Simulation {
                         jsonPath("$.id").exists()
                     )
             )
-            .pause(Duration.ofMillis(750));
+            .pause(Duration.ofMillis(pauseMillis));
 
     {
         setUp(
             normalLogin
                 .injectClosed(
-                    rampConcurrentUsers(0).to(normalUsers).during(Duration.ofSeconds(SMOKE ? 2 : 10)),
+                    rampConcurrentUsers(0).to(normalUsers).during(Duration.ofSeconds(rampSeconds)),
                     constantConcurrentUsers(normalUsers).during(Duration.ofSeconds(normalSeconds))
                 )
                 .andThen(
                     peakLogin.injectClosed(
-                        rampConcurrentUsers(normalUsers).to(peakUsers).during(Duration.ofSeconds(SMOKE ? 2 : 8)),
+                        rampConcurrentUsers(normalUsers).to(peakUsers).during(Duration.ofSeconds(peakRampSeconds)),
                         constantConcurrentUsers(peakUsers).during(Duration.ofSeconds(peakSeconds))
                     )
                 )
