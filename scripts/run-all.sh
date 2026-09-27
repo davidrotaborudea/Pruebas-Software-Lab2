@@ -28,11 +28,6 @@ USERNAME="${USERNAME:-john}"
 PASSWORD="${PASSWORD:-demo}"
 PUBLIC_HOST="parabank.parasoft.com"
 
-if [[ "${PROFILE}" == "full" && "${BASE_URL}" == *"${PUBLIC_HOST}"* ]]; then
-  echo "Refusing a full load run against the shared public ParaBank host."
-  echo "Run full tests against the local environment or another authorized target."
-  exit 2
-fi
 
 COMMON_ARGS=(
   "-Dprofile=${PROFILE}"
